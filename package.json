@@ -1,0 +1,20 @@
+{
+  "name": "map-to-points",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node map-to-points.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "flatqueue": "^1.1.0",
+    "got": "^9.6.0",
+    "jimp": "^0.6.0",
+    "png-js": "^0.1.1",
+    "terminal-image": "^0.1.2",
+    "tinyqueue": "^2.0.0"
+  }
+}
