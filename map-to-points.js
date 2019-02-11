@@ -3,6 +3,17 @@ const PNG = require('png-js');
 // 3.15 sec
 
 const config = require('./config');
+const {
+  parent,
+  left,
+  right,
+  exchange,
+  insert,
+  min,
+  extractMin,
+  heapify,
+  buildQueue
+} = require('./priority-queue');
 
 const png = PNG.load(config.imagePath);
 
@@ -80,7 +91,7 @@ PNG.decode(config.imagePath, data => {
   const startLocation = { x: 840, y: 80 };
   const endLocation = { x: 360, y: 640 };
 
-  for (let i=0; i<data.length; i+=4) {      
+  for (let i=0; i<data.length; i+=4) {
     const pixel = {
       r: data[i],
       g: data[i+1],
@@ -124,7 +135,7 @@ PNG.decode(config.imagePath, data => {
 
   const route = navigate(bluePixels, start, end);
 
-return
+// return
 
   if (route) {
     console.log('ROUTE:', route);
