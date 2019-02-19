@@ -1,64 +1,95 @@
 const SIZE = 0;
 const parent = i => Math.floor(i / 2);
-const left = i => Math.floor(i * 2);
-const right = i => Math.floor(i * 2 + 1);
+const left = i => i * 2;
+const right = i => i * 2 + 1;
 
-const exchange = (queue, x, y) => {
-  const temp = queue[x];
-  queue[x] = queue[y];
-  temp[y] = temp;
-};
+module.exports = class {
 
-const insert = (queue, x) => {
-  const size = queue[SIZE];
-  queue[size] += 1;
-  queue[queue[size]] = -999999999;
-  decreaseKey(A, x);
-};
+  constructor(queueSize, existing=[], getId = x => x, compare = (l, r) => l < r) {
+    this.queue = new Array(queueSize - existing.length);
+    this.indexes = new Array(queueSize + 1);
+    this.compare = compare;
+    this.getId = getId;
 
-const min = queue => queue[1];
+    this.queue.unshift(...existing);
+    this.queue.unshift(existing.length);
 
-const extractMin = queue => {
-  if (queue[SIZE] < 1) return;
-
-  let max = A[1];
-  queue[1] = queue[queue[SIZE]];
-  queue[SIZE] -= 1;
-  heapify(queue, 1);
-};
-
-const heapify = (queue, i) => {
-  const l = left(i);
-  const r = right(i);
-  let target = i;
-  if (l <= queue[SIZE] && queue[l] > queue[i]) {
-    target = l;
+    existing.forEach(e => {
+      const index = this.getId(e);
+      this.indexes[index] = index;
+    });
+    
+    for (let i = Math.floor(queueSize / 2); i >= 1; i--) {
+      this.heapify(i);
+    }
   }
-  if (r <= queue[SIZE] && queue[r] > queue[largest]) {
-    target = r;
-  }
-  if (largest !== i) {
-    exchange(queue, i, target);
-    heapify(queue, target);
-  }
-};
 
-const buildQueue = (queueSize, existing=new Array(queueSize+1)) => {
-  existing.unshift(queueSize);
+  size() {
+    return this.queue[SIZE];
+  }
+
+  indexOf(i) {
+    return this.indexes[i];
+  }
+
+  heapify(i) {
+    const l = left(i);
+    const r = right(i);
+    let target = i;
   
-  for (let i = Math.floor(queueSize / 2); i >= 1; i++) {
-    heapify(existing, i);
+    if (l <= this.queue[SIZE] && this.compare(this.queue[l], this.queue[target])) {
+      target = l;
+    }
+    if (r <= this.queue[SIZE] && this.compare(this.queue[r], this.queue[target])) {
+      target = r;
+    }
+    if (target !== i) {
+      this.exchange(i, target);
+      this.heapify(target);
+    }
   }
-};
 
-module.exports = {
-  parent,
-  left,
-  right,
-  exchange,
-  insert,
-  min,
-  extractMin,
-  heapify,
-  buildQueue,
+  insert(x) {
+    const size = this.queue[SIZE] + 1;
+    this.queue[SIZE] = size;
+    this.queue[size] = x;
+    this.indexes[this.getId(x)] = size;
+    this.update(size, x);
+  }
+  
+  min() {
+    return this.queue[1];
+  }
+  
+  extractMin() {
+    if (this.queue[SIZE] < 1) return;
+  
+    let target = this.queue[1];
+    this.exchange(1, this.queue[SIZE]);
+    this.queue[SIZE] -= 1;
+    this.heapify(1);
+    return target;
+  }
+
+  exchange(xIndex, yIndex) {
+    const x = this.queue[xIndex];
+    const y = this.queue[yIndex];
+
+    this.queue[xIndex] = y;
+    this.queue[yIndex] = x;
+    
+    this.indexes[this.getId(x)] = yIndex;
+    this.indexes[this.getId(y)] = xIndex;
+  }
+
+  update(i, x) {
+    if (this.compare(this.queue[i], x)) return;
+
+    this.queue[i] = x;
+
+    while (i > 1 && this.compare(this.queue[i], this.queue[parent(i)])) {
+      this.exchange(i, parent(i));
+      i = parent(i);
+    }
+  }
 };
