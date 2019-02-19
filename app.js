@@ -2,46 +2,93 @@ const config = require('./config');
 const mapToPoints = require('./map-to-points');
 const navigate = require('./navigation');
 const {
-  writeImage,
-  pixelForLocation,
   distance
 } = require('./helpers');
+const { writeImage } = require('./path-printer');
 const PNG = require('png-js');
 
 const image = PNG.load(config.imagePath);
 
-const IMAGE_WIDTH = image.width;
-const IMAGE_HEIGHT = image.height;
+// pelican bay - origin
+// 38.125583, -92.715390
+// 3485, 2747
+
+// bagnell dam
+// 38.203645, -92.624705
+// 4543, 1586
+
+// x: 11,666.75855985
+// y: -14,872.7934206144
+
+const coordinatesToGrid = ({ lat, long }) => ({
+  x: (-92.715390 - long) * -11666.75855985 + 3485,
+  y: (38.125583 - lat) * 14872.7934206144 + 2747,
+});
+
+const gridToCoordinates = ({ x, y }) => ({
+  lat: (x - 3485) / 13546.4747796137 + 38.125583,
+  long: (y - 2747) / -12802.5583062248 + -92.715390,
+});
+
+const snap = ({ x, y }) => {
+  const roundX = Math.round(x);
+  const roundY = Math.round(y);
+
+  return { x: roundX - (roundX % config.pixelSkipCount), y: roundY - (roundY % config.pixelSkipCount) };
+};
+
+const parseArgument = name =>
+  process.argv.filter(a => a.includes(`${name}=`))[0]
+              .split('=')[1];
+
+const parseCoordinateArgument = name =>
+  parseArgument(name)
+    .split(',')
+    .reduce((acc, x, i) => ({
+      ...acc,
+      [i == 0 ? 'lat' : 'long']: parseFloat(x),
+    }), {});
+
+const readInput = () => ({
+  start: parseCoordinateArgument('start'),
+  end: parseCoordinateArgument('end'),
+});
 
 (async () => {
-  const startLocation = { x: 840, y: 80 };
-  const endLocation = { x: 360, y: 640 };
+  const input = readInput();
+
+  const desiredStartPoint = coordinatesToGrid(input.start);
+  const desiredEndPoint = coordinatesToGrid(input.end);
   
   const heuristicCostEstimate = (point, dest) => distance(point.location, dest.location);
   
-  const allPixels = await mapToPoints({
+  const allPoints = await mapToPoints({
     imageWidth: image.width,
     imageHeight: image.height,
     imagePath: config.imagePath,
   });
+
+  const points = allPoints.filter(p => p.location.x % config.pixelSkipCount == 0 && p.location.y % config.pixelSkipCount == 0)
+                          .map((x, i) => ({
+                            ...x,
+                            blueIndex: i + 1,
+                          }));
+
+  const start = points.map(p => ({
+    ...p,
+    distance: distance(p.location, desiredStartPoint),
+  })).sort((a, b) => a.distance - b.distance)[0];
+
+  const end = points.map(p => ({
+    ...p,
+    distance: distance(p.location, desiredEndPoint),
+  })).sort((a, b) => a.distance - b.distance)[0];
   
-  const pixels = allPixels.filter(p => p.location.x % config.pixelSkipCount == 0 && p.location.y % config.pixelSkipCount == 0);
-  
-  const bluePixels = pixels.filter(p => p.isBlue).map((x, i) => ({
-    ...x,
-    blueIndex: i + 1,
-  }));
-  
-  const start = pixelForLocation(bluePixels, startLocation);
-  const end = pixelForLocation(bluePixels, endLocation);
-  
-  console.log('BLUE PIXELS:', bluePixels.length);
-  console.log('TOTAL PIXELS:', pixels.length / 4);
-  console.log('START:', `[${start.index}]`, start.location);
-  console.log('END:', `[${end.index}]`, end.location);
+  console.log(`${points.length} blue / ${image.width * image.height} total pixels`);
+  console.log(`${JSON.stringify(start.location)} => ${JSON.stringify(end.location)}`);
   
   const route = navigate({
-    points: bluePixels,
+    points,
     start,
     end,
     heuristicCostEstimate,
@@ -51,11 +98,11 @@ const IMAGE_HEIGHT = image.height;
     writeImage({
       route,
       filename: config.routeImagePath,
-      pixels: allPixels,
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
-      toConsole: true,
-      toFile: false,
+      bluePixels: allPoints,
+      width: image.width,
+      height: image.height,
+      toConsole: false,
+      toFile: true,
     });
   } else {
     console.log('No route found');

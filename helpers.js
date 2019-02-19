@@ -1,6 +1,4 @@
-const Jimp = require('jimp');
 const PNG = require('png-js');
-const terminalImage = require('terminal-image');
 
 const config = require('./config');
 
@@ -31,29 +29,3 @@ exports.distance = distance;
 
 exports.calculateNeighbors = (location, points) =>
   points.filter(p => distance(location, p.location) < (config.pixelSkipCount + 1) * Math.sqrt(2.01));
-
-exports.writeImage = async ({ filename, pixels, route, width, height, toFile, toConsole }) => {
-  console.log('writing image...')
-  
-  const image = new Jimp(width, height);
-
-  for (let i=0; i<pixels.length; i+=1) {
-    const { r, g, b, a } = pixels[i].isBlue
-      ? (route.includes(i) ? { r: 0, g: 0, b: 0, a: 255 } : config.blue)
-      : { r: 0, g: 0, b: 0, a: 255 };
-    const offset = i * 4;
-
-    image.bitmap.data[offset    ] = r;
-    image.bitmap.data[offset + 1] = g;
-    image.bitmap.data[offset + 2] = b;
-    image.bitmap.data[offset + 3] = a;
-  }
-
-  if (toConsole) {
-    console.log(await terminalImage.buffer(await image.getBufferAsync(Jimp.MIME_PNG)));
-  }
-  
-  if (toFile) {
-    image.write(filename);
-  }
-};

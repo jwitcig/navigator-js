@@ -5,21 +5,22 @@ const config = require('./config');
 const { isBlue } = require('./helpers');
 
 const processPixels = ({ imageWidth, imageHeight, data }) => {
-  let allPixels = [];
+  let pixels = [];
 
   for (let i=0; i<data.length; i+=4) {
-    const isBlue = isBlue({
+    const pixel = {
       r: data[i    ],
       g: data[i + 1],
       b: data[i + 2],
       a: data[i + 3],
-    });
+    };
+
+    if (!isBlue(pixel)) continue;
 
     const index = i / 4;
 
-    allPixels.push({
+    pixels.push({
       index,
-      isBlue,
       location: {
         x: index % imageWidth,
         y: Math.floor(index / imageWidth),
@@ -29,7 +30,7 @@ const processPixels = ({ imageWidth, imageHeight, data }) => {
     });
   }
 
-  return allPixels;
+  return pixels;
 };
 
 module.exports = args => new Promise((resolve, reject) => {
@@ -38,7 +39,6 @@ module.exports = args => new Promise((resolve, reject) => {
       ...args,
       data
     });
-
     resolve(points);
   });
 });

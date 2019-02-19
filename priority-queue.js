@@ -8,6 +8,7 @@ module.exports = class {
   constructor(queueSize, existing=[], getId = x => x, compare = (l, r) => l < r) {
     this.queue = new Array(queueSize - existing.length);
     this.indexes = new Array(queueSize + 1);
+    this.indexes.fill(-1);
     this.compare = compare;
     this.getId = getId;
 
@@ -31,6 +32,10 @@ module.exports = class {
   indexOf(i) {
     return this.indexes[i];
   }
+
+  // includes(i) {
+  //   return this.index;
+  // }
 
   heapify(i) {
     const l = left(i);
