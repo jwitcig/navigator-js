@@ -23,27 +23,14 @@ exports.pixelForLocation = (pixels, location) => {
 exports.pixelsForLocations = (pixels, locations) =>
   locations.map(l => pixelForLocation(pixels, l)).filter(p => p !== undefined);
 
-const distance = (src, dest) => Math.sqrt(
-  (src.x - dest.x) * (src.x - dest.x)
-  +
-  (src.y - dest.y) * (src.y - dest.y)
+const distance = (a, b) => Math.sqrt(
+  (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
 );
 
 exports.distance = distance;
 
 exports.calculateNeighbors = (location, points) =>
   points.filter(p => distance(location, p.location) < (config.pixelSkipCount + 1) * Math.sqrt(2.01));
-
-exports.reconstructPath = (cameFrom, current) => {
-  let totalPath = [current.index];
-
-  let p = current;
-  while (cameFrom[p.index]) {
-    p = cameFrom[p.index];
-    totalPath.push(p.index);
-  }
-  return totalPath;
-};
 
 exports.writeImage = async ({ filename, pixels, route, width, height, toFile, toConsole }) => {
   console.log('writing image...')
