@@ -33,9 +33,13 @@ module.exports = class {
     return this.indexes[i];
   }
 
-  // includes(i) {
-  //   return this.index;
-  // }
+  includes(i) {
+    return this.indexOf(i) >= 0;
+  }
+
+  hasIncluded(i) {
+    return this.indexOf(i) === -2;
+  }
 
   heapify(i) {
     const l = left(i);
@@ -70,6 +74,7 @@ module.exports = class {
     if (this.queue[SIZE] < 1) return;
   
     let target = this.queue[1];
+    this.indexes[this.getId(target)] = -2;
     this.exchange(1, this.queue[SIZE]);
     this.queue[SIZE] -= 1;
     this.heapify(1);

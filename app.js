@@ -107,6 +107,9 @@ const readInput = () => ({
   } else {
     console.log('No route found');
   }
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  console.log(`The script uses approximately ${Math.round(used * 100) / 100} MB`);
+
+  const used = process.memoryUsage();
+  for (let key in used) {
+    console.log(`${key}\t${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+  }
 })();
