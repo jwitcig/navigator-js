@@ -21,8 +21,14 @@ module.exports = args => {
     points,
     start,
     end,
-    heuristicCostEstimate
+    heuristicCostEstimate,
+    gridSize
   } = args;
+
+  const location = index => ({
+    x: index % gridSize.width,
+    y: Math.floor(index / gridSize.width),
+  });
 
   let cameFrom = {};
 
@@ -43,11 +49,11 @@ module.exports = args => {
       return reconstructPath(cameFrom, current);
     }
     
-    const neighbors = calculateNeighbors(current.location, pixels);
+    const neighbors = calculateNeighbors(location(current.index), pixels);
     for (const neighbor of neighbors) {
       if (openSet.hasIncluded(neighbor.blueIndex) || openSet.includes(neighbor.blueIndex)) continue;
 
-      const tentativeGScore = current.gScore + distance(current.location, neighbor.location);
+      const tentativeGScore = current.gScore + distance(location(current.index), location(neighbor.index));
 
       if (!openSet.includes(neighbor.blueIndex)) {
         openSet.insert(neighbor);
@@ -56,7 +62,6 @@ module.exports = args => {
       }
 
       cameFrom[neighbor.index] = current;
-      
       openSet.update(openSet.indexOf(neighbor.blueIndex), {
         ...neighbor,
         gScore: tentativeGScore,

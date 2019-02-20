@@ -22,10 +22,6 @@ const processPixels = ({ imageWidth, imageHeight, data }) => {
 
     pixels.push({
       index,
-      location: {
-        x: index % imageWidth,
-        y: Math.floor(index / imageWidth),
-      },
       gScore: 999999999,
       fScore: 999999999,
     });

@@ -4,6 +4,11 @@ const config = require('./config');
 
 const png = PNG.load(config.imagePath);
 
+const calculateLocation = index => ({
+  x: index % png.width,
+  y: Math.floor(index / png.width),
+});
+
 const comparePixels = (lhs, rhs) =>
   lhs.r === rhs.r &&
   lhs.g === rhs.g &&
@@ -15,7 +20,7 @@ exports.isBlue = pixel => comparePixels(pixel, config.blue);
 const locationToIndex = l => l.x + l.y * png.width;
 
 exports.pixelForLocation = (pixels, location) => {
-  return pixels.filter(p => p.location.x === location.x && p.location.y === location.y)[0];
+  return pixels.filter(p => calculateLocation(p.index).x === location.x && calculateLocation(p.index).y === location.y)[0];
 };
 
 exports.pixelsForLocations = (pixels, locations) =>
@@ -28,4 +33,4 @@ const distance = (a, b) => Math.sqrt(
 exports.distance = distance;
 
 exports.calculateNeighbors = (location, points) =>
-  points.filter(p => distance(location, p.location) < (config.pixelSkipCount + 1) * Math.sqrt(2.01));
+  points.filter(p => distance(location, calculateLocation(p.index)) < (config.pixelSkipCount + 1) * Math.sqrt(2.01));

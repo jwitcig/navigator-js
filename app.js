@@ -59,8 +59,13 @@ const readInput = () => ({
 
   const desiredStartPoint = coordinatesToGrid(input.start);
   const desiredEndPoint = coordinatesToGrid(input.end);
+
+  const location = index => ({
+    x: index % image.width,
+    y: Math.floor(index / image.width),
+  });
   
-  const heuristicCostEstimate = (point, dest) => distance(point.location, dest.location);
+  const heuristicCostEstimate = (point, dest) => distance(location(point.index), location(dest.index));
   
   const allPoints = await mapToPoints({
     imageWidth: image.width,
@@ -68,7 +73,7 @@ const readInput = () => ({
     imagePath: config.imagePath,
   });
 
-  const points = allPoints.filter(p => p.location.x % config.pixelSkipCount == 0 && p.location.y % config.pixelSkipCount == 0)
+  const points = allPoints.filter(p => location(p.index).x % config.pixelSkipCount == 0 && location(p.index).y % config.pixelSkipCount == 0)
                           .map((x, i) => ({
                             ...x,
                             blueIndex: i + 1,
@@ -76,22 +81,26 @@ const readInput = () => ({
 
   const start = points.map(p => ({
     ...p,
-    distance: distance(p.location, desiredStartPoint),
+    distance: distance(location(p.index), desiredStartPoint),
   })).sort((a, b) => a.distance - b.distance)[0];
 
   const end = points.map(p => ({
     ...p,
-    distance: distance(p.location, desiredEndPoint),
+    distance: distance(location(p.index), desiredEndPoint),
   })).sort((a, b) => a.distance - b.distance)[0];
   
   console.log(`${points.length} blue / ${image.width * image.height} total pixels`);
-  console.log(`${JSON.stringify(start.location)} => ${JSON.stringify(end.location)}`);
+  console.log(`${JSON.stringify(location(start.index))} => ${JSON.stringify(location(end.index))}`);
   
   const route = navigate({
     points,
     start,
     end,
     heuristicCostEstimate,
+    gridSize: {
+      width: image.width,
+      height: image.height,
+    }
   });
   
   if (route) {
@@ -102,7 +111,7 @@ const readInput = () => ({
       width: image.width,
       height: image.height,
       toConsole: false,
-      toFile: true,
+      toFile: false,
     });
   } else {
     console.log('No route found');
