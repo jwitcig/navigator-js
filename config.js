@@ -1,6 +1,6 @@
 const resourcesDir = '../map-resources';
 
-const precision = parseInt(process.argv.filter(a => a.includes('precision='))[0].split('=')[1]);
+// const precision = parseInt(process.argv.filter(a => a.includes('precision='))[0].split('=')[1]);
 
 module.exports = {
   pixelSkipCount: precision || 10,
