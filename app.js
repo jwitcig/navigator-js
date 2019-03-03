@@ -54,11 +54,7 @@ const readInput = () => ({
   end: parseCoordinateArgument('end'),
 });
 
-(async () => {
-  const input = readInput();
-
-  const desiredStartPoint = coordinatesToGrid(input.start);
-  const desiredEndPoint = coordinatesToGrid(input.end);
+const findPath = async (desiredStartPoint, desiredEndPoint) => {
 
   const location = index => ({
     x: index % image.width,
@@ -121,4 +117,17 @@ const readInput = () => ({
   for (let key in used) {
     console.log(`${key}\t${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
   }
+  
+  return route;
+};
+
+(async () => {
+  const input = readInput();
+
+  const desiredStartPoint = coordinatesToGrid(input.start);
+  const desiredEndPoint = coordinatesToGrid(input.end);
+
+  return await findPath(desiredStartPoint, desiredEndPoint);
 })();
+
+module.exports = findPath;
