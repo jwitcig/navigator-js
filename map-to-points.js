@@ -1,11 +1,8 @@
 const PNG = require('png-js');
-const fs = require('fs');
-
-const config = require('./config');
 
 const { isBlue } = require('./helpers');
  
-const processPixels = ({ imageWidth, imageHeight, data }) => {
+const processPixels = ({ data }) => {
   let pixels = [];
 
   for (let i=0; i<data.length; i+=4) {

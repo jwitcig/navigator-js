@@ -7,8 +7,6 @@ const {
 const { writeImage } = require('./path-printer');
 const PNG = require('png-js');
 
-const image = PNG.load(config.imagePath);
-
 // pelican bay - origin
 // 38.125583, -92.715390
 // 3485, 2747
@@ -54,22 +52,27 @@ const readInput = () => ({
   end: parseCoordinateArgument('end'),
 });
 
-const findPath = async (desiredStartPoint, desiredEndPoint) => {
+const findPath = async ({
+  desiredStartPoint,
+  desiredEndPoint,
+  gridWidth,
+  gridHeight,
+  precision,
+  mapPath
+  }) => {
 
   const location = index => ({
-    x: index % image.width,
-    y: Math.floor(index / image.width),
+    x: index % gridWidth,
+    y: Math.floor(index / gridWidth),
   });
   
   const heuristicCostEstimate = (point, dest) => distance(location(point.index), location(dest.index));
   
   const allPoints = await mapToPoints({
-    imageWidth: image.width,
-    imageHeight: image.height,
-    imagePath: config.imagePath,
+    imagePath: mapPath
   });
 
-  const points = allPoints.filter(p => location(p.index).x % config.pixelSkipCount == 0 && location(p.index).y % config.pixelSkipCount == 0)
+  const points = allPoints.filter(p => location(p.index).x % precision == 0 && location(p.index).y % precision == 0)
                           .map((x, i) => ({
                             ...x,
                             blueIndex: i + 1,
@@ -85,7 +88,7 @@ const findPath = async (desiredStartPoint, desiredEndPoint) => {
     distance: distance(location(p.index), desiredEndPoint),
   })).sort((a, b) => a.distance - b.distance)[0];
   
-  console.log(`${points.length} blue / ${image.width * image.height} total pixels`);
+  console.log(`${points.length} blue / ${gridWidth * gridHeight} total pixels`);
   console.log(`${JSON.stringify(location(start.index))} => ${JSON.stringify(location(end.index))}`);
   
   const route = navigate({
@@ -94,8 +97,8 @@ const findPath = async (desiredStartPoint, desiredEndPoint) => {
     end,
     heuristicCostEstimate,
     gridSize: {
-      width: image.width,
-      height: image.height,
+      width: gridWidth,
+      height: gridHeight,
     }
   });
   
@@ -104,10 +107,10 @@ const findPath = async (desiredStartPoint, desiredEndPoint) => {
       route,
       filename: config.routeImagePath,
       bluePixels: allPoints,
-      width: image.width,
-      height: image.height,
+      width: gridWidth,
+      height: gridHeight,
       toConsole: false,
-      toFile: false,
+      toFile: true,
     });
   } else {
     console.log('No route found');
@@ -121,13 +124,22 @@ const findPath = async (desiredStartPoint, desiredEndPoint) => {
   return route;
 };
 
-(async () => {
-  const input = readInput();
+// (async () => {
+//   const input = readInput();
 
-  const desiredStartPoint = coordinatesToGrid(input.start);
-  const desiredEndPoint = coordinatesToGrid(input.end);
+//   const desiredStartPoint = coordinatesToGrid(input.start);
+//   const desiredEndPoint = coordinatesToGrid(input.end);
 
-  return await findPath(desiredStartPoint, desiredEndPoint);
-})();
+//   const image = PNG.load(config.imagePath);
+
+//   return await findPath({
+//     desiredStartPoint,
+//     desiredEndPoint,
+//     gridWidth: image.width,
+//     gridHeight: image.height,
+//     precision: 12,
+//     mapPath: config.imagePath,
+//   });
+// })();
 
 module.exports = findPath;
