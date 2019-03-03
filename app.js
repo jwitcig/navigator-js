@@ -110,7 +110,7 @@ const findPath = async ({
       width: gridWidth,
       height: gridHeight,
       toConsole: false,
-      toFile: true,
+      toFile: false,
     });
   } else {
     console.log('No route found');
