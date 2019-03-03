@@ -26,7 +26,6 @@ const processPixels = ({ imageWidth, imageHeight, data }) => {
       fScore: 999999999,
     });
   }
-
   return pixels;
 };
 

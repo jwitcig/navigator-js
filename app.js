@@ -9,6 +9,25 @@ const PNG = require('png-js');
 
 const image = PNG.load(config.imagePath);
 
+const { spawn } = require("child_process");
+
+for (let i=0; i<3; i++) {
+  const c = spawn('./test', ['jonah']);
+
+c.stdin.write("jonah witcig sent this\n");
+
+// c.on('message', message => {
+//   console.log('message from C:', message);
+// });
+
+let ms = 0;
+c.stdout.on('data', data => {
+  // console.log(`C stdout: ${data}`);
+  ms++;
+  if (ms % 10 == 0) console.log(ms);
+});
+}
+
 // pelican bay - origin
 // 38.125583, -92.715390
 // 3485, 2747
