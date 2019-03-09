@@ -1,9 +1,9 @@
 const PNG = require('png-js');
-
-const { isBlue } = require('./helpers');
  
-const processPixels = ({ data }) => {
+const processPixels = ({ data, filter, populatePoint }) => {
   let pixels = [];
+
+  let blues = {};
 
   for (let i=0; i<data.length; i+=4) {
     const pixel = {
@@ -13,18 +13,23 @@ const processPixels = ({ data }) => {
       a: data[i + 3],
     };
 
-    if (!isBlue(pixel)) continue;
-
     const index = i / 4;
 
-    pixels.push({
-      index,
-      gScore: 999999999,
-      fScore: 999999999,
-    });
+    if (filter && !filter({ pixel, index })) {
+      continue;
+    }
+
+    blues[index] = true;
+
+    const point = populatePoint({ index, pixel });
+
+    pixels.push(point);
   }
 
-  return pixels;
+  return {
+    points: pixels,
+    blues,
+  };
 };
 
 module.exports = args => new Promise((resolve, reject) => {

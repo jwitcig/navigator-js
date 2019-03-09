@@ -1,4 +1,5 @@
-const getPixels = require('./map-to-all-points');
+const getPixels = require('./map-to-points');
+const { isBlue } = require('./helpers');
 
 const locationForIndex = gridSize => index => ({
   x: index % gridSize.width,
@@ -56,9 +57,12 @@ const rotateImageRight = ({ pixels, gridSize }) => {
   return output;
 };
 
-exports.calculateAverageWidth = async ({ gridSize, mapPath }) => {
+const calculateAverageWidth = async ({ gridSize, mapPath }) => {
   console.log('loading pixels...');
-  const pixels = await getPixels({ imagePath: mapPath });
+  const pixels = await getPixels({
+    imagePath: mapPath,
+    populatePoint: ({ pixel }) => isBlue(pixel),
+  });
   console.log('taking measurements...');
 
   let sum = 0;
@@ -94,14 +98,32 @@ exports.calculateAverageWidth = async ({ gridSize, mapPath }) => {
   return sum / samples;
 };
 
-// (async () => {
-//   const gridSize = { width: 6000, height: 6000 };
-//   // const gridSize = { width: 1000, height: 858 };
-  
-//   const average = await calculateAverageWidth({
-//     gridSize,
-//     mapPath: '../map-resources/loz.png',
-//   });
+const pointsInRadius = r => {
+  const lambda = Math.floor(r * Math.sin(3.14159265/4));
 
-//   console.log('average width:', average);
-// })();
+  let sum = 0;
+  for (let y=1; y<=lambda; y++) {
+    sum += Math.floor(Math.sqrt(r*r - y*y)) - y;
+  }
+
+  return 4*Math.floor(r) + 8*sum + 4*lambda + 1;
+};
+
+(async () => {
+  // const gridSize = { width: 6000, height: 6000 };
+  // const gridSize = { width: 1000, height: 858 };
+  
+  // const average = await calculateAverageWidth({
+  //   gridSize,
+  //   mapPath: '../map-resources/loz.png',
+  // });
+
+  // console.log('average width:', average);
+
+  const radii = [...Array(500).keys()];
+  for (const radius of radii) {
+    console.log('radius:', radius, ':', pointsInRadius(radius));
+  }
+})();
+
+exports.calculateAverageWidth = calculateAverageWidth;

@@ -34,3 +34,23 @@ exports.distance = distance;
 
 exports.calculateNeighbors = (location, points) =>
   points.filter(p => distance(location, calculateLocation(p.index)) < (config.pixelSkipCount + 1) * Math.sqrt(2.01));
+
+const randomBool = () => Math.random() >= 0.5;
+
+const randomizeSign = x => (randomBool() ? -1 : 1) * x;
+
+exports.enumeratePoints = (radius, origin, count=null) => {
+  const pointCount = count || 50;
+
+  let points = [];
+  for (let i=0; i<pointCount; i++) {
+    const xOffset = randomizeSign( Math.floor((Math.random() * radius) + 1) );
+    const yOffset = randomizeSign( Math.floor((Math.random() * radius) + 1) );
+
+    points.push({
+      x: origin.x + xOffset,
+      y: origin.y + yOffset,
+    });
+  }
+  return points;
+};
