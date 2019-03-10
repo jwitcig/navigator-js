@@ -60,10 +60,12 @@ const findPath = async ({
   
   let allPoints;
   let blues;
+  let lowResPoints;
 
   if (cache) {
     allPoints = cache.allPoints;
     blues = cache.blues;
+    lowResPoints = cache.lowResPoints;
   } else {
     const results = await mapToPoints({
       imagePath: mapPath,
@@ -83,7 +85,9 @@ const findPath = async ({
 
   let points = [];
 
-  if (!highPrecision) {
+  if (!highPrecision && cache) {
+    points = cache.lowResPoints;
+  } else if (!highPrecision) {
     console.log('loading points...')
 
     const channelPoints = allPoints
@@ -176,7 +180,7 @@ const findPath = async ({
 
   return {
     route: route.map(p => convertToCoordinatePoint(location(p))),
-    cache: { allPoints, blues },
+    cache: { allPoints, blues, lowResPoints: points },
   };
 };
 
