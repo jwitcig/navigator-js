@@ -186,77 +186,77 @@ const readInput = () => ({
   precision: parseInt(parseArgument('precision')),
 });
 
-(async () => {
-  const input = readInput();
+// (async () => {
+//   const input = readInput();
 
-  const desiredStartPoint = convertToGridPoint(input.start);
-  const desiredEndPoint = convertToGridPoint(input.end);
+//   const desiredStartPoint = convertToGridPoint(input.start);
+//   const desiredEndPoint = convertToGridPoint(input.end);
 
-  const image = PNG.load(config.imagePath);
+//   const image = PNG.load(config.imagePath);
 
-  const mainPath = await findPath({
-    desiredStartPoint,
-    desiredEndPoint,
-    gridSize: {
-      width: image.width,
-      height: image.height,
-    },
-    precision: input.precision,
-    mapPath: config.imagePath,
-  });
+//   const mainPath = await findPath({
+//     desiredStartPoint,
+//     desiredEndPoint,
+//     gridSize: {
+//       width: image.width,
+//       height: image.height,
+//     },
+//     precision: input.precision,
+//     mapPath: config.imagePath,
+//   });
 
-  console.log(mainPath.route)
+//   console.log(mainPath.route)
 
-  const head = await findPath({
-    desiredStartPoint,
-    desiredEndPoint: convertToGridPoint(mainPath.route[mainPath.route.length-1]),
-    gridSize: {
-      width: image.width,
-      height: image.height,
-    },
-    precision: input.precision,
-    mapPath: config.imagePath,
-    highPrecision: true,
-    cache: mainPath.cache,
-  });
+//   const head = await findPath({
+//     desiredStartPoint,
+//     desiredEndPoint: convertToGridPoint(mainPath.route[mainPath.route.length-1]),
+//     gridSize: {
+//       width: image.width,
+//       height: image.height,
+//     },
+//     precision: input.precision,
+//     mapPath: config.imagePath,
+//     highPrecision: true,
+//     cache: mainPath.cache,
+//   });
 
-  const tail = await findPath({
-    desiredStartPoint: desiredEndPoint,
-    desiredEndPoint: convertToGridPoint(mainPath.route[0]),
-    gridSize: {
-      width: image.width,
-      height: image.height,
-    },
-    precision: input.precision,
-    mapPath: config.imagePath,
-    highPrecision: true,
-    cache: mainPath.cache,
-  });
+//   const tail = await findPath({
+//     desiredStartPoint: desiredEndPoint,
+//     desiredEndPoint: convertToGridPoint(mainPath.route[0]),
+//     gridSize: {
+//       width: image.width,
+//       height: image.height,
+//     },
+//     precision: input.precision,
+//     mapPath: config.imagePath,
+//     highPrecision: true,
+//     cache: mainPath.cache,
+//   });
 
-  const index = calculateIndex({
-    width: image.width,
-    height: image.height,
-  })
+//   const index = calculateIndex({
+//     width: image.width,
+//     height: image.height,
+//   })
 
-  const route = [...head.route, ...mainPath.route, ...tail.route]
-                  .map(c => {
-                    console.log(c)
-                    console.log(convertToGridPoint(c))
-                    console.log(index(convertToGridPoint(c)))
+//   const route = [...head.route, ...mainPath.route, ...tail.route]
+//                   .map(c => {
+//                     console.log(c)
+//                     console.log(convertToGridPoint(c))
+//                     console.log(index(convertToGridPoint(c)))
 
-                    return index(convertToGridPoint(c))
-                  })
+//                     return index(convertToGridPoint(c))
+//                   })
 
-  writeImage({
-    route,
-    filename: config.routeImagePath,
-    bluePixels: mainPath.cache.allPoints,
-    width: image.width,
-    height: image.height,
-    toConsole: false,
-    toFile: true,
-  });
+//   writeImage({
+//     route,
+//     filename: config.routeImagePath,
+//     bluePixels: mainPath.cache.allPoints,
+//     width: image.width,
+//     height: image.height,
+//     toConsole: false,
+//     toFile: true,
+//   });
 
-})();
+// })();
 
 module.exports = findPath;
