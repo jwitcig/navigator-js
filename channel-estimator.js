@@ -8,13 +8,13 @@ const locationForIndex = gridSize => index => ({
 
 const indexForLocation = gridSize => location => location.y * gridSize.width + location.x;
 
-const calculateWidthsForRow = ({ row, points, gridSize }) => {
+const calculateWidthsForRow = ({ start, end, row, points, gridSize }) => {
   const gridLocationForIndex = locationForIndex(gridSize);
   const gridIndexForLocation = indexForLocation(gridSize);
 
   let widths = [];
   let minX = null;
-  for (let x=0; x<gridSize.width; x++) {
+  for (let x=start; x<end; x++) {
     const cursorLocation = { x, y: row };
     const cursorIndex = gridIndexForLocation(cursorLocation);
   
@@ -37,7 +37,7 @@ const calculateWidthsForRow = ({ row, points, gridSize }) => {
   return widths;
 };
 
-const rotateImageRight = ({ pixels, gridSize }) => {
+exports.rotateImageRight = ({ pixels, gridSize }) => {
   const output = new Array(gridSize.width * gridSize.height);
 
   for (let y=0; y<gridSize.height; y++) {
@@ -57,19 +57,15 @@ const rotateImageRight = ({ pixels, gridSize }) => {
   return output;
 };
 
-const calculateAverageWidth = async ({ gridSize, mapPath }) => {
-  console.log('loading pixels...');
-  const pixels = await getPixels({
-    imagePath: mapPath,
-    populatePoint: ({ pixel }) => isBlue(pixel),
-  });
-  console.log('taking measurements...');
+const calculateAverageWidth = ({ start, end, gridSize, pixels }) => {
+  const startPoint = start || { x: 0, y: 0 };
+  const endPoint = end || { x: gridSize.width, y: gridSize.height };
 
   let sum = 0;
   let samples = 0;
   let all = [];
-  for (let y=0; y<gridSize.height; y++) {
-    const widths = calculateWidthsForRow({ row: y, points: pixels, gridSize })
+  for (let y=startPoint.y; y<endPoint.y; y++) {
+    const widths = calculateWidthsForRow({ start: startPoint.x, end: endPoint.x, row: y, points: pixels[0], gridSize })
                     .filter(w => w > 10);
 
     all = all.concat(widths);
@@ -78,15 +74,10 @@ const calculateAverageWidth = async ({ gridSize, mapPath }) => {
     samples += widths.length;
   }
 
-  console.log('adjusting the map...');
-  const rotated = rotateImageRight({
-    pixels,
-    gridSize,
-  });
-  console.log('taking some more measurements...');
+  const rotated = pixels[1];
 
   for (let y=0; y<gridSize.height; y++) {
-    const widths = calculateWidthsForRow({ row: y, points: rotated, gridSize })
+    const widths = calculateWidthsForRow({ start: startPoint.x, end: endPoint.x, row: y, points: rotated, gridSize })
                     .filter(w => w > 10);
 
     all = all.concat(widths);
@@ -109,21 +100,35 @@ const pointsInRadius = r => {
   return 4*Math.floor(r) + 8*sum + 4*lambda + 1;
 };
 
-(async () => {
-  // const gridSize = { width: 6000, height: 6000 };
-  // const gridSize = { width: 1000, height: 858 };
+// (async () => {
+//   const mapPath = '../map-resources/loz.png';
+
+//   const gridSize = { width: 6000, height: 6000 };
+//   // const gridSize = { width: 1000, height: 858 };
+
+//   // console.log('loading pixels...');
+
+//   // const result = await getPixels({
+//   //   imagePath: mapPath,
+//   //   populatePoint: ({ pixel }) => isBlue(pixel),
+//   // });
+
+//   // const pixels = result.points;
   
-  // const average = await calculateAverageWidth({
-  //   gridSize,
-  //   mapPath: '../map-resources/loz.png',
-  // });
+//   // let average = await calculateAverageWidth({
+//   //   gridSize,
+//   //   pixels,
+//   //   start: { x: 50, y: 5000 },
+//   //   end: { x: 6000, y: 6000 },
+//   // });
 
-  // console.log('average width:', average);
+//   // console.log('average width:', average);
 
-  const radii = [...Array(500).keys()];
-  for (const radius of radii) {
-    console.log('radius:', radius, ':', pointsInRadius(radius));
-  }
-})();
+
+//   // const radii = [...Array(500).keys()];
+//   // for (const radius of radii) {
+//   //   console.log('radius:', radius, ':', pointsInRadius(radius));
+//   // }
+// })();
 
 exports.calculateAverageWidth = calculateAverageWidth;

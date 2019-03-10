@@ -11,7 +11,7 @@ exports.writeImage = async ({ filename, bluePixels, route, width, height, toFile
   for (let i=0; i<bluePixels.length; i++) {
     const pixel = bluePixels[i];
 
-    const { r, g, b, a } = route.includes(pixel.index) ? { r: 0, g: 0, b: 0, a: 255} : config.blue;
+    const { r, g, b, a } = route.includes(pixel.index) ? { r: 0, g: 0, b: 0, a: 255 } : config.blue;
       
     const offset = pixel.index * 4;
 

@@ -33,7 +33,7 @@ const distance = (a, b) => Math.sqrt(
 exports.distance = distance;
 
 exports.calculateNeighbors = (location, points) =>
-  points.filter(p => distance(location, calculateLocation(p.index)) < (config.pixelSkipCount + 1) * Math.sqrt(2.01));
+  points.filter(p => distance(location, calculateLocation(p.index)) <= config.pixelSkipCount * Math.sqrt(2));
 
 const randomBool = () => Math.random() >= 0.5;
 
