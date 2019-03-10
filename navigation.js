@@ -22,7 +22,8 @@ module.exports = args => {
     start,
     end,
     heuristicCostEstimate,
-    gridSize
+    gridSize,
+    jumpSize,
   } = args;
 
   const location = index => ({
@@ -49,7 +50,7 @@ module.exports = args => {
       return reconstructPath(cameFrom, current);
     }
     
-    const neighbors = calculateNeighbors(location(current.index), pixels);
+    const neighbors = calculateNeighbors(location(current.index), pixels, jumpSize);
     for (const neighbor of neighbors) {
       if (openSet.hasIncluded(neighbor.blueIndex) || openSet.includes(neighbor.blueIndex)) continue;
 

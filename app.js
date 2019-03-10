@@ -6,37 +6,9 @@ const {
   distance,
   isBlue,
   enumeratePoints,
+  coordinatesToGrid,
 } = require('./helpers');
 const { writeImage } = require('./path-printer');
-const { calculateAverageWidth, rotateImageRight } = require('./channel-estimator');
-
-// pelican bay - origin
-// 38.125583, -92.715390
-// 3485, 2747
-
-// bagnell dam
-// 38.203645, -92.624705
-// 4543, 1586
-
-// x: 11,666.75855985
-// y: -14,872.7934206144
-
-const coordinatesToGrid = ({ lat, long }) => ({
-  x: (-92.715390 - long) * -11666.75855985 + 3485,
-  y: (38.125583 - lat) * 14872.7934206144 + 2747,
-});
-
-const gridToCoordinates = ({ x, y }) => ({
-  lat: (x - 3485) / 13546.4747796137 + 38.125583,
-  long: (y - 2747) / -12802.5583062248 + -92.715390,
-});
-
-const snap = ({ x, y }) => {
-  const roundX = Math.round(x);
-  const roundY = Math.round(y);
-
-  return { x: roundX - (roundX % config.pixelSkipCount), y: roundY - (roundY % config.pixelSkipCount) };
-};
 
 const parseArgument = name =>
   process.argv.filter(a => a.includes(`${name}=`))[0]
@@ -53,6 +25,21 @@ const parseCoordinateArgument = name =>
 const readInput = () => ({
   start: parseCoordinateArgument('start'),
   end: parseCoordinateArgument('end'),
+});
+
+const convertToGridPoint = coordinatesToGrid({
+  originCoordinates: {
+    lat: 38.125583,
+    long: -92.715390,
+  },
+  originGrid: {
+    x: 3485,
+    y: 2747,
+  },
+  scales: {
+    lat: 14872.7934206144,
+    long: -11666.75855985,
+  },
 });
 
 const findPath = async ({
@@ -72,7 +59,7 @@ const findPath = async ({
   const index = position => position.y * gridWidth + position.x;
   
   const heuristicCostEstimate = (point, dest) => distance(location(point.index), location(dest.index));
-  
+
   const results = await mapToPoints({
     imagePath: mapPath,
     filter: ({ pixel }) => {
@@ -89,70 +76,62 @@ const findPath = async ({
 
   console.log('loading points...')
 
-  const resultsForWidthAverage = await mapToPoints({
-    imagePath: mapPath,
-    populatePoint: ({ pixel }) => isBlue(pixel),
-  });
-  console.log('rotating points...')
-  const rotated = rotateImageRight({
-    pixels: resultsForWidthAverage.points,
-    gridSize: { width: gridWidth, height: gridHeight },
-  });
+  const channelPoints = allPoints
+                          .filter(p => location(p.index).x % precision === 0 && location(p.index).y % precision === 0)
+                          .filter(p => {
+                            const neighborhood = enumeratePoints(25, location(p.index), 500);
+                            return neighborhood.length - neighborhood.filter(n => results.blues[index(n)]).length < 50;
+                          });
 
-  const channelWidthCache = {};
-  const channelWindowSize = 500;
-  const channelWindowTranslation = 200;
+                    
+  const channelWindowSize = 40;
+  const channelWindowTranslation = channelWindowSize;
 
-  let c = 0
+  let points = [];
+
   for (let y=0; y<gridHeight; y+=channelWindowTranslation) {
     for (let x=0; x<gridWidth; x+=channelWindowTranslation) {
-      channelWidthCache[`${x}${y}`] = calculateAverageWidth({
-        gridSize: { width: gridWidth, height: gridHeight },
-        pixels: [resultsForWidthAverage.points, rotated],
-        start: { x, y },
-        end: { x: x + channelWindowSize, y: y + channelWindowSize },
+      
+      const pointsInWindow = channelPoints.filter(p => {
+        const pLocation = location(p.index);
+
+        return pLocation.x >= x && pLocation.x <= x + channelWindowSize &&
+               pLocation.y >= y && pLocation.y <= y + channelWindowSize
       });
-      if (c % 100 === 0)
-        console.log(c)
-      c ++
+
+      if (pointsInWindow.length === 0) continue;
+
+      let meanX = pointsInWindow.reduce((acc, p) => acc + location(p.index).x, 0) / pointsInWindow.length;
+      let meanY = pointsInWindow.reduce((acc, p) => acc + location(p.index).y, 0) / pointsInWindow.length;
+
+      const i = index({
+        x: Math.floor(meanX),
+        y: Math.floor(meanY),
+      });
+      
+      points.push({
+        index: i,
+        gScore: 999999999,
+        fScore: 999999999,  
+      });
     }
   }
 
-  const points = allPoints.filter(p => location(p.index).x % precision === 0 && location(p.index).y % precision === 0)
-                          .filter(p => {
-                            const pLocation = location(p.index);
-
-                            const x = (pLocation.x / (channelWindowTranslation / 2)) % 0 === 0
-                                      ? pLocation.x - (pLocation.x % channelWindowTranslation)
-                                      : pLocation.x + (channelWindowTranslation - (pLocation.x % channelWindowTranslation));
-                            const y = (pLocation.y / (channelWindowTranslation / 2)) % 0 === 0
-                                      ? pLocation.y - (pLocation.y % channelWindowTranslation)
-                                      : pLocation.y + (channelWindowTranslation - (pLocation.y % channelWindowTranslation));
-
-                            const channelWidth = isNaN(channelWidthCache[`${x}${y}`]) ? 1000000 : channelWidthCache[`${x}${y}`];
-                            if (isNaN(channelWidth)) console.log(channelWidthCache['35003000'])
-                            const desiredWidth = channelWidth / 8;
-                            
-                            const neighborhood = enumeratePoints((channelWidth - desiredWidth) / 2, location(p.index), 500);
-                            // const neighborhood = enumeratePoints(1, location(p.index));
-
-                            return neighborhood.length - neighborhood.filter(n => results.blues[index(n)]).length < 50;
-                          })
-                          .map((x, i) => ({
-                            ...x,
-                            blueIndex: i + 1,
-                          }));
-
-  writeImage({
-    route: points.map(p => p.index),
-    filename: config.routeImagePath,
-    bluePixels: allPoints,
-    width: gridWidth,
-    height: gridHeight,
-    toConsole: false,
-    toFile: true,
-  });
-  return
+  points = points.map((x, i) => ({
+                      ...x,
+                      blueIndex: i + 1,
+                    }));
+ 
+  // writeImage({
+  //   route: points.map(p => p.index),
+  //   filename: config.routeImagePath,
+  //   bluePixels: allPoints,
+  //   width: gridWidth,
+  //   height: gridHeight,
+  //   toConsole: false,
+  //   toFile: true,
+  // });
+  // return
                           
   console.log('HOW MANY IN CHANNEL:', points.length)
 
@@ -178,6 +157,7 @@ const findPath = async ({
       width: gridWidth,
       height: gridHeight,
     },
+    jumpSize: 2 * 40 * Math.sqrt(2),
   });
   
   if (route) {
@@ -205,8 +185,8 @@ const findPath = async ({
 (async () => {
   const input = readInput();
 
-  const desiredStartPoint = coordinatesToGrid(input.start);
-  const desiredEndPoint = coordinatesToGrid(input.end);
+  const desiredStartPoint = convertToGridPoint(input.start);
+  const desiredEndPoint = convertToGridPoint(input.end);
 
   const image = PNG.load(config.imagePath);
 
