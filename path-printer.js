@@ -4,6 +4,8 @@ const terminalImage = require('terminal-image');
 const config = require('./config');
 
 exports.writeImage = async ({ filename, bluePixels, route, width, height, toFile, toConsole }) => {
+  if (!toConsole && !toFile) return;
+
   console.log('writing image...')
   
   const image = new Jimp(width, height);
