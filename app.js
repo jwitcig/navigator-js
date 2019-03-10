@@ -163,24 +163,24 @@ const readInput = () => ({
   precision: parseInt(parseArgument('precision')),
 });
 
-(async () => {
-  const input = readInput();
+// (async () => {
+//   const input = readInput();
 
-  const desiredStartPoint = convertToGridPoint(input.start);
-  const desiredEndPoint = convertToGridPoint(input.end);
+//   const desiredStartPoint = convertToGridPoint(input.start);
+//   const desiredEndPoint = convertToGridPoint(input.end);
 
-  const image = PNG.load(config.imagePath);
+//   const image = PNG.load(config.imagePath);
 
-  return await findPath({
-    desiredStartPoint,
-    desiredEndPoint,
-    gridSize: {
-      width: image.width,
-      height: image.height,
-    },
-    precision: input.precision,
-    mapPath: config.imagePath,
-  });
-})();
+//   return await findPath({
+//     desiredStartPoint,
+//     desiredEndPoint,
+//     gridSize: {
+//       width: image.width,
+//       height: image.height,
+//     },
+//     precision: input.precision,
+//     mapPath: config.imagePath,
+//   });
+// })();
 
 module.exports = findPath;
