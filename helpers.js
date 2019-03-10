@@ -56,14 +56,14 @@ exports.enumeratePoints = (radius, origin, count=null) => {
 };
 
 exports.coordinatesToGrid = ({ originCoordinates, originGrid, scales }) => ({ lat, long }) => ({
-  x: (originCoordinates.long - long) * scales.long + originGrid.x,
-  y: (originCoordinates.lat - lat) * scales.lat + originGrid.y,
+  x: Math.round( (originCoordinates.long - long) * scales.long + originGrid.x ),
+  y: Math.round( (originCoordinates.lat - lat) * scales.lat + originGrid.y ),
 });
 
-// exports.coordinatesToGrid = ({ origin, scales }) => ({ lat, long }) => ({
-//   x: (-92.715390 - long) * -11666.75855985 + 3485,
-//   y: (38.125583 - lat) * 14872.7934206144 + 2747,
-// });
+exports.gridToCoordinates = ({ originCoordinates, originGrid, scales }) => ({ x, y }) => ({
+  lat: originCoordinates.lat - (y - originGrid.y) / scales.lat,
+  long: originCoordinates.long - (x - originGrid.x) / scales.long
+});
 
 exports.snapToGrid = ({ x, y }) => {
   const roundX = Math.round(x);
