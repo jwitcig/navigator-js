@@ -1,13 +1,15 @@
-const PNG = require('png-js');
 
 const config = require('./config');
 
-const png = PNG.load(config.imagePath);
-
-const calculateLocation = index => ({
-  x: index % png.width,
-  y: Math.floor(index / png.width),
+const calculateLocation = gridSize => index => ({
+  x: index % gridSize.width,
+  y: Math.floor(index / gridSize.width),
 });
+
+const calculateIndex = gridSize => position => position.y * gridSize.width + position.x;
+
+exports.calculateLocation = calculateLocation;
+exports.calculateIndex = calculateIndex;
 
 const comparePixels = (lhs, rhs) =>
   lhs.r === rhs.r &&
@@ -17,14 +19,12 @@ const comparePixels = (lhs, rhs) =>
 
 exports.isBlue = pixel => comparePixels(pixel, config.blue);
 
-const locationToIndex = l => l.x + l.y * png.width;
+// exports.pixelForLocation = (pixels, location) => {
+//   return pixels.filter(p => location(p.index).x === location.x && location(p.index).y === location.y)[0];
+// };
 
-exports.pixelForLocation = (pixels, location) => {
-  return pixels.filter(p => calculateLocation(p.index).x === location.x && calculateLocation(p.index).y === location.y)[0];
-};
-
-exports.pixelsForLocations = (pixels, locations) =>
-  locations.map(l => pixelForLocation(pixels, l)).filter(p => p !== undefined);
+// exports.pixelsForLocations = (pixels, locations) =>
+//   locations.map(l => pixelForLocation(pixels, l)).filter(p => p !== undefined);
 
 const distance = (a, b) => Math.sqrt(
   (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
@@ -32,8 +32,8 @@ const distance = (a, b) => Math.sqrt(
 
 exports.distance = distance;
 
-exports.calculateNeighbors = (location, points, jumpSize=config.pixelSkipCount * Math.sqrt(2)) =>
-  points.filter(p => distance(location, calculateLocation(p.index)) <= jumpSize);
+exports.calculateNeighbors = gridSize => (location, points, jumpSize) =>
+  points.filter(p => distance(location, calculateLocation(gridSize)(p.index)) <= jumpSize);
 
 const randomBool = () => Math.random() >= 0.5;
 

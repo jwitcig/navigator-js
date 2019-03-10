@@ -7,6 +7,8 @@ const {
   isBlue,
   enumeratePoints,
   coordinatesToGrid,
+  calculateIndex,
+  calculateLocation,
 } = require('./helpers');
 const { writeImage } = require('./path-printer');
 
@@ -21,11 +23,6 @@ const parseCoordinateArgument = name =>
       ...acc,
       [i == 0 ? 'lat' : 'long']: parseFloat(x),
     }), {});
-
-const readInput = () => ({
-  start: parseCoordinateArgument('start'),
-  end: parseCoordinateArgument('end'),
-});
 
 const convertToGridPoint = coordinatesToGrid({
   originCoordinates: {
@@ -45,18 +42,13 @@ const convertToGridPoint = coordinatesToGrid({
 const findPath = async ({
   desiredStartPoint,
   desiredEndPoint,
-  gridWidth,
-  gridHeight,
+  gridSize,
   precision,
   mapPath
   }) => {
 
-  const location = index => ({
-    x: index % gridWidth,
-    y: Math.floor(index / gridWidth),
-  });
-
-  const index = position => position.y * gridWidth + position.x;
+  const index = calculateIndex(gridSize);
+  const location = calculateLocation(gridSize);
   
   const heuristicCostEstimate = (point, dest) => distance(location(point.index), location(dest.index));
 
@@ -65,7 +57,7 @@ const findPath = async ({
     filter: ({ pixel }) => {
       return isBlue(pixel);
     },
-    populatePoint: ({ index, pixel }) => ({
+    populatePoint: ({ index }) => ({
       index,
       gScore: 999999999,
       fScore: 999999999,
@@ -83,14 +75,13 @@ const findPath = async ({
                             return neighborhood.length - neighborhood.filter(n => results.blues[index(n)]).length < 50;
                           });
 
-                    
   const channelWindowSize = 40;
   const channelWindowTranslation = channelWindowSize;
 
   let points = [];
 
-  for (let y=0; y<gridHeight; y+=channelWindowTranslation) {
-    for (let x=0; x<gridWidth; x+=channelWindowTranslation) {
+  for (let y=0; y<gridSize.height; y+=channelWindowTranslation) {
+    for (let x=0; x<gridSize.width; x+=channelWindowTranslation) {
       
       const pointsInWindow = channelPoints.filter(p => {
         const pLocation = location(p.index);
@@ -122,19 +113,6 @@ const findPath = async ({
                       blueIndex: i + 1,
                     }));
  
-  // writeImage({
-  //   route: points.map(p => p.index),
-  //   filename: config.routeImagePath,
-  //   bluePixels: allPoints,
-  //   width: gridWidth,
-  //   height: gridHeight,
-  //   toConsole: false,
-  //   toFile: true,
-  // });
-  // return
-                          
-  console.log('HOW MANY IN CHANNEL:', points.length)
-
   const start = points.map(p => ({
     ...p,
     distance: distance(location(p.index), desiredStartPoint),
@@ -145,7 +123,7 @@ const findPath = async ({
     distance: distance(location(p.index), desiredEndPoint),
   })).sort((a, b) => a.distance - b.distance)[0];
   
-  console.log(`${points.length} blue / ${gridWidth * gridHeight} total pixels`);
+  console.log(`${points.length} blue / ${gridSize.width * gridSize.height} total pixels`);
   console.log(`${JSON.stringify(location(start.index))} => ${JSON.stringify(location(end.index))}`);
   
   const route = navigate({
@@ -153,10 +131,7 @@ const findPath = async ({
     start,
     end,
     heuristicCostEstimate,
-    gridSize: {
-      width: gridWidth,
-      height: gridHeight,
-    },
+    gridSize,
     jumpSize: 2 * 40 * Math.sqrt(2),
   });
   
@@ -165,8 +140,8 @@ const findPath = async ({
       route,
       filename: config.routeImagePath,
       bluePixels: allPoints,
-      width: gridWidth,
-      height: gridHeight,
+      width: gridSize.width,
+      height: gridSize.height,
       toConsole: false,
       toFile: true,
     });
@@ -182,6 +157,12 @@ const findPath = async ({
   return route;
 };
 
+const readInput = () => ({
+  start: parseCoordinateArgument('start'),
+  end: parseCoordinateArgument('end'),
+  precision: parseInt(parseArgument('precision')),
+});
+
 (async () => {
   const input = readInput();
 
@@ -193,9 +174,11 @@ const findPath = async ({
   return await findPath({
     desiredStartPoint,
     desiredEndPoint,
-    gridWidth: image.width,
-    gridHeight: image.height,
-    precision: 10,
+    gridSize: {
+      width: image.width,
+      height: image.height,
+    },
+    precision: input.precision,
     mapPath: config.imagePath,
   });
 })();

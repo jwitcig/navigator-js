@@ -1,6 +1,10 @@
 const PriorityQueue = require('./priority-queue');
 
-const { calculateNeighbors, distance } = require('./helpers');
+const {
+  calculateNeighbors,
+  distance,
+  calculateLocation
+} = require('./helpers');
 
 const reconstructPath = (cameFrom, current) => {
   let totalPath = [current.index];
@@ -26,10 +30,9 @@ module.exports = args => {
     jumpSize,
   } = args;
 
-  const location = index => ({
-    x: index % gridSize.width,
-    y: Math.floor(index / gridSize.width),
-  });
+  const findNeighbors = calculateNeighbors(gridSize);
+
+  const location = calculateLocation(gridSize);
 
   let cameFrom = {};
 
@@ -50,7 +53,7 @@ module.exports = args => {
       return reconstructPath(cameFrom, current);
     }
     
-    const neighbors = calculateNeighbors(location(current.index), pixels, jumpSize);
+    const neighbors = findNeighbors(location(current.index), pixels, jumpSize);
     for (const neighbor of neighbors) {
       if (openSet.hasIncluded(neighbor.blueIndex) || openSet.includes(neighbor.blueIndex)) continue;
 
